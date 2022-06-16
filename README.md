@@ -91,5 +91,6 @@ The above template can also be deployed using `make`, To deploy using make pleas
 
 To deploy using *make* please follow the below steps:
 
-1. Export environment variable `CONFIG` using `export CONFIG=todo-stack-config.yml`.
-2. Run `make create`.
+1. `cd` into the cloned/extracted file
+2. Export environment variable `CONFIG` using `export CONFIG=todo-stack-config.yml`. You can also set `AWS_DEFAULT_REGION=< region you want the stack deployed >` if not set it'll deploy the stack in default region configured in AWS CLI
+3. Run `make create`.
