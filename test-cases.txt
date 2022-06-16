@@ -1,0 +1,34 @@
+
+
+1. Create To-Do from CREATE-TODO Lambda function
+
+    a. Go to Lambda function console --> CREATE-TODO function --> Create a new test event
+    b. Create a test event `Create Todo` with following json parameters:
+                {
+                    "title": < Todo title you wish to give >,
+                    "task": < description of the title or tasks needed to be done >
+                }
+    c. Save the test event `Create Todo`
+    d. Click on Test to execute the above created test event.
+
+OUTPUT: Response code 200, Data should get inserted in dynamodb table
+
+
+
+2. Read To-Do from READ-TODO Lambda function
+
+    a. Go to Lambda function console --> READ-TODO function --> Create a new test event
+    b. Create a test event `Read all todo` with the following json parameters:
+                {
+
+                }
+    c. Save the test event as `Read all Todo`
+    d. Create a test event `Read-uuid-todo` with the following json parameters:
+                {
+                    "uuid": < Pass uuid-of todo from id field of dynamodb table >
+                }
+    e. Save the test event as `Read by uuid`
+    f. Click on Test to execute the above created test events.
+
+OUTPUT `Read all Todo`: It should retun all rows of todo Data
+OUTPUT `Read-uuid-todo`: It should retun todo entry having the passed uuid in json.

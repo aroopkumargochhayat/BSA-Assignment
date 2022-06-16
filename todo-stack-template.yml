@@ -1,0 +1,132 @@
+
+Resources:
+
+  LambdaFunctionCreate:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import uuid as myuuid
+
+          dynamodb = boto3.resource('dynamodb')
+          table = dynamodb.Table('todo-table')
+
+          def put_user_data(uuid,title, task):
+
+              response = table.put_item( Item = { 'id': uuid, 'title': title, 'task': task })
+              return response
+    
+          def lambda_handler(event, context):    
+              uuid=str(myuuid.uuid4())
+              title=event['title']
+              task=event['task']
+              dynamo_resp = put_user_data(uuid,title,task)
+              return {
+                    'statusCode': 200,
+                    'body': json.dumps(dynamo_resp)}
+      FunctionName: "CREATE-TODO"
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt IAMRole.Arn
+    DependsOn:
+      - DynamoDBTable
+
+  LambdaFunctionRead:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          dynamodb = boto3.resource('dynamodb')
+          table = dynamodb.Table('todo-table')
+
+          def get_data(uuid):
+    
+
+              response = table.get_item(Key={'id': uuid})
+              return response
+    
+          def lambda_handler(event, context):
+    
+              uuid = event.get('uuid', None)
+    
+              if uuid != None:
+        
+                uuid=event['uuid']
+                data = get_data(uuid)
+        
+              if uuid == None:
+
+                response = table.scan()
+                data = response['Items']
+                while 'LastEvaluatedKey' in response:
+                    response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+                    data.extend(response['Items'])
+         
+              return {
+                'statusCode': 200,
+                'body': json.dumps(data)
+                  }
+      FunctionName: "READ-TODO"
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt IAMRole.Arn
+    DependsOn:
+      - DynamoDBTable
+
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: "todo-table"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    DependsOn:
+      - IAMRole
+
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: Policy_api-lambda-db
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:TagResource'
+                  - 'dynamodb:UntagResource'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                Resource: 'arn:aws:dynamodb:*:*:table/todo-table'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
